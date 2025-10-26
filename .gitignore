@@ -1,0 +1,47 @@
+# C++ build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# Build directory
+build/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+main
+fractal-server
+
+# Test binary
+*.test
+
+# Output coverage
+*.out
+
+# Dependency directories
+vendor/
+
+# Uploaded and processed files (создаются автоматически)
+uploads/
+compressed/
+decompressed/
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+cpp_src/

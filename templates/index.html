@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фрактальное сжатие</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: #2a2a2a;
+            border: 1px solid #2a2a2a;
+        }
+
+        .panel {
+            background: #1a1a1a;
+            padding: 40px;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 1px solid #333;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #0f0f0f;
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover {
+            border-color: #555;
+            background: #151515;
+        }
+
+        .upload-area.dragover {
+            border-color: #888;
+            background: #1f1f1f;
+        }
+
+        .upload-area.hidden {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .upload-text {
+            color: #888;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .upload-hint {
+            color: #555;
+            font-size: 11px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* File Info */
+        .file-info {
+            display: none;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .file-name {
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .file-remove {
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .file-remove:hover {
+            color: #fff;
+        }
+
+        .file-type {
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #222;
+            border-color: #555;
+        }
+
+        button:active:not(:disabled) {
+            background: #2a2a2a;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        button.primary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        button.primary:active:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        /* Preview */
+        .preview-container {
+            flex: 1;
+            border: 1px solid #333;
+            background: #0f0f0f;
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .preview-placeholder {
+            color: #333;
+            font-size: 48px;
+            text-align: center;
+        }
+
+        .result-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: #333;
+            border: 1px solid #333;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .stats.show {
+            display: grid;
+        }
+
+        .stat-item {
+            background: #1a1a1a;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Messages */
+        .message {
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            border: 1px solid;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #0f1f0f;
+            color: #5f5;
+            border-color: #2a4a2a;
+        }
+
+        .message.error {
+            background: #1f0f0f;
+            color: #f55;
+            border-color: #4a2a2a;
+        }
+
+        /* Loader */
+        .loader {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #333;
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 32px auto;
+            display: none;
+        }
+
+        .loader.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Download */
+        .download-btn {
+            display: none;
+            width: 100%;
+            padding: 16px;
+            background: #fff;
+            color: #000;
+            text-decoration: none;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid #fff;
+            transition: all 0.2s;
+        }
+
+        .download-btn.show {
+            display: block;
+        }
+
+        .download-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* Info */
+        .info {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .info-title {
+            color: #888;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 10px;
+        }
+
+        /* Header */
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 24px;
+            }
+        }
+
+        /* Mode Switch */
+        .mode-switch {
+            display: flex;
+            gap: 1px;
+            background: #333;
+            border: 1px solid #333;
+            margin-bottom: 24px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            background: #1a1a1a;
+            color: #666;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #2a2a2a;
+            color: #fff;
+        }
+
+        .mode-btn:hover {
+            color: #fff;
+        }
+
+        /* File type indicator */
+        .file-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #2a2a2a;
+            color: #888;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Фрактальное сжатие / IFS</div>
+
+    <div class="container">
+        <!-- Левая панель: Входные данные -->
+        <div class="panel">
+            <h2>Входные данные</h2>
+            <p class="subtitle">Загрузите изображение или .frac файл</p>
+
+            <!-- Mode Switch -->
+            <div class="mode-switch">
+                <button class="mode-btn active" id="compressModeBtn">Сжатие</button>
+                <button class="mode-btn" id="decompressModeBtn">Распаковка</button>
+            </div>
+
+            <!-- Upload Area для изображений -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">○</div>
+                <div class="upload-text">Перетащите файл</div>
+                <div class="upload-hint" id="uploadHint">PNG, JPEG, BMP</div>
+            </div>
+
+            <!-- File Info -->
+            <div class="file-info" id="fileInfo">
+                <div class="file-info-header">
+                    <span class="file-name" id="fileName">—</span>
+                    <span class="file-remove" id="fileRemove">Удалить</span>
+                </div>
+                <span class="file-type" id="fileType">—</span>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*,.frac">
+
+            <div class="info">
+                <div class="info-title">Алгоритм</div>
+                IFS (Iterated Function Systems) — метод сжатия на основе самоподобия.
+                Изображение делится на блоки, для каждого находится похожий блок в исходнике.
+                Сохраняются только трансформации вместо пикселей.
+            </div>
+
+            <div class="buttons" id="compressButtons">
+                <button class="primary" id="compressBtn" disabled>Сжать</button>
+            </div>
+
+            <div class="buttons" id="decompressButtons" style="display:none;">
+                <button class="primary" id="decompressBtn" disabled>Распаковать</button>
+            </div>
+
+            <div class="loader" id="loader"></div>
+        </div>
+
+        <!-- Правая панель: Выходные данные -->
+        <div class="panel">
+            <h2>Выходные данные</h2>
+            <p class="subtitle">Результат обработки</p>
+
+            <div id="messageContainer"></div>
+
+            <div class="preview-container" id="previewContainer">
+                <div class="preview-placeholder">—</div>
+            </div>
+
+            <div class="stats" id="statsContainer"></div>
+
+            <a href="#" class="download-btn" id="downloadBtn" download>Скачать</a>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileType = document.getElementById('fileType');
+        const fileRemove = document.getElementById('fileRemove');
+        const uploadHint = document.getElementById('uploadHint');
+
+        const compressModeBtn = document.getElementById('compressModeBtn');
+        const decompressModeBtn = document.getElementById('decompressModeBtn');
+        const compressButtons = document.getElementById('compressButtons');
+        const decompressButtons = document.getElementById('decompressButtons');
+
+        const compressBtn = document.getElementById('compressBtn');
+        const decompressBtn = document.getElementById('decompressBtn');
+        const loader = document.getElementById('loader');
+
+        const messageContainer = document.getElementById('messageContainer');
+        const previewContainer = document.getElementById('previewContainer');
+        const statsContainer = document.getElementById('statsContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let uploadedFile = null;
+        let currentMode = 'compress'; // 'compress' or 'decompress'
+
+        // Mode switching
+        compressModeBtn.addEventListener('click', () => {
+            currentMode = 'compress';
+            compressModeBtn.classList.add('active');
+            decompressModeBtn.classList.remove('active');
+            compressButtons.style.display = 'flex';
+            decompressButtons.style.display = 'none';
+            fileInput.setAttribute('accept', 'image/*');
+            uploadHint.textContent = 'PNG, JPEG, BMP';
+            clearFile();
+            clearResults();
+        });
+
+        decompressModeBtn.addEventListener('click', () => {
+            currentMode = 'decompress';
+            decompressModeBtn.classList.add('active');
+            compressModeBtn.classList.remove('active');
+            decompressButtons.style.display = 'flex';
+            compressButtons.style.display = 'none';
+            fileInput.setAttribute('accept', '.frac');
+            uploadHint.textContent = 'FRAC файлы';
+            clearFile();
+            clearResults();
+        });
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileRemove.addEventListener('click', clearFile);
+
+        function handleFile(file) {
+            uploadedFile = file;
+
+            // Show file info, hide upload area
+            uploadArea.classList.add('hidden');
+            fileInfo.classList.add('show');
+
+            fileName.textContent = file.name;
+
+            const ext = file.name.split('.').pop().toUpperCase();
+            const size = (file.size / 1024).toFixed(1) + ' KB';
+            fileType.textContent = ext + ' · ' + size;
+
+            if (currentMode === 'compress') {
+                compressBtn.disabled = false;
+            } else {
+                decompressBtn.disabled = false;
+            }
+
+            clearResults();
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            uploadArea.classList.remove('hidden');
+            fileInfo.classList.remove('show');
+            compressBtn.disabled = true;
+            decompressBtn.disabled = true;
+            fileInput.value = '';
+        }
+
+        // Compress
+        compressBtn.addEventListener('click', async () => {
+            if (!uploadedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+
+            compressBtn.disabled = true;
+            loader.classList.add('show');
+            clearResults();
+
+            try {
+                const response = await fetch('/compress', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message);
+                    showStats(data.processTime, data.compressionRatio);
+                    if (data.downloadUrl) {
+                        showDownload(data.downloadUrl, 'compressed.frac');
+                    }
+                } else {
+                    showMessage('error', data.error);
+                }
+            } catch (error) {
+                showMessage('error', 'Ошибка сжатия: ' + error.message);
+            } finally {
+                loader.classList.remove('show');
+                compressBtn.disabled = false;
+            }
+        });
+
+        // Decompress
+        decompressBtn.addEventListener('click', async () => {
+            if (!uploadedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+
+            decompressBtn.disabled = true;
+            loader.classList.add('show');
+            clearResults();
+
+            try {
+                const response = await fetch('/decompress', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message);
+                    if (data.imageUrl) {
+                        showImage(data.imageUrl);
+                    }
+                    if (data.processTime) {
+                        showStats(data.processTime, null);
+                    }
+                    if (data.downloadUrl) {
+                        showDownload(data.downloadUrl, 'decompressed.png');
+                    }
+                } else {
+                    showMessage('error', data.error);
+                }
+            } catch (error) {
+                showMessage('error', 'Ошибка распаковки: ' + error.message);
+            } finally {
+                loader.classList.remove('show');
+                decompressBtn.disabled = false;
+            }
+        });
+
+        function clearResults() {
+            messageContainer.innerHTML = '';
+            previewContainer.innerHTML = '<div class="preview-placeholder">—</div>';
+            statsContainer.innerHTML = '';
+            statsContainer.classList.remove('show');
+            downloadBtn.classList.remove('show');
+        }
+
+        function showMessage(type, text) {
+            messageContainer.innerHTML = `<div class="message ${type} show">${text}</div>`;
+        }
+
+        function showImage(url) {
+            previewContainer.innerHTML = `<img src="${url}?t=${Date.now()}" class="result-image" alt="Результат">`;
+        }
+
+        function showStats(time, ratio) {
+            let html = '';
+            if (time) {
+                html += `<div class="stat-item">
+                    <div class="stat-label">Время</div>
+                    <div class="stat-value">${time}</div>
+                </div>`;
+            }
+            if (ratio) {
+                html += `<div class="stat-item">
+                    <div class="stat-label">Сжатие</div>
+                    <div class="stat-value">${ratio}</div>
+                </div>`;
+            }
+            if (html) {
+                statsContainer.innerHTML = html;
+                statsContainer.classList.add('show');
+            }
+        }
+
+        function showDownload(url, filename) {
+            downloadBtn.href = url;
+            downloadBtn.download = filename;
+            downloadBtn.textContent = 'Скачать ' + filename;
+            downloadBtn.classList.add('show');
+        }
+    </script>
+</body>
+</html>
