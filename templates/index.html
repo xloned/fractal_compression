@@ -364,6 +364,26 @@
             color: #666;
         }
 
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 10px;
+            color: #444;
+            letter-spacing: 1px;
+        }
+
+        .footer a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #999;
+        }
+
         /* Responsive */
         @media (max-width: 968px) {
             .container {
@@ -423,6 +443,9 @@
 </head>
 <body>
     <div class="header">Фрактальное сжатие / IFS</div>
+    <div class="footer">
+        Powered by <a href="https://github.com/" target="_blank">PIFS Algorithm</a>
+    </div>
 
     <div class="container">
         <!-- Левая панель: Входные данные -->
@@ -455,10 +478,11 @@
             <input type="file" id="fileInput" accept="image/*,.frac">
 
             <div class="info">
-                <div class="info-title">Алгоритм</div>
-                IFS (Iterated Function Systems) — метод сжатия на основе самоподобия.
-                Изображение делится на блоки, для каждого находится похожий блок в исходнике.
-                Сохраняются только трансформации вместо пикселей.
+                <div class="info-title">Алгоритм PIFS</div>
+                Partitioned Iterated Function Systems — метод фрактального сжатия на основе самоподобия.
+                Изображение делится на блоки (range blocks), для каждого находится похожий блок
+                большего размера (domain block) в исходнике. Сохраняются только аффинные трансформации
+                вместо пикселей, что позволяет достичь высокого коэффициента сжатия.
             </div>
 
             <div class="buttons" id="compressButtons">
